@@ -46,6 +46,7 @@
         body {
             margin: 0;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -54,29 +55,60 @@
             font-family: Arial, sans-serif;
         }
         
+        #gameContainer {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        #gameTitle {
+            color: #00FF41;
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.7);
+        }
+        
         #gameCanvas {
-            background-color: #333;
-            border: 2px solid #444;
+            background-color: #000;
+            border: 2px solid #333;
+        }
+        
+        #topBar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-bottom: 5px;
         }
         
         #gameInfo {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: white;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 5px;
+            display: flex;
+            gap: 15px;
         }
         
         #controls {
+            display: flex;
+            gap: 15px;
+            transition: opacity 0.5s ease;
+        }
+        
+        #pauseButton {
             position: absolute;
-            bottom: 10px;
-            left: 10px;
-            color: white;
+            top: 10px;
+            right: 10px;
             background-color: rgba(0, 0, 0, 0.5);
-            padding: 10px;
+            color: white;
+            border: none;
+            padding: 5px 10px;
             border-radius: 5px;
+            cursor: pointer;
+            z-index: 5;
+            display: none; /* Hidden by default, shown on mobile */
         }
         
         #gameOver {
@@ -90,6 +122,7 @@
             border-radius: 10px;
             text-align: center;
             display: none;
+            z-index: 10;
         }
         
         #startScreen {
@@ -105,8 +138,22 @@
             z-index: 10;
         }
         
+        #pauseScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 10;
+        }
+        
         button {
-            background-color: #4CAF50;
+            background-color: #00AA36;
             border: none;
             color: white;
             padding: 10px 20px;
@@ -118,25 +165,48 @@
             cursor: pointer;
             border-radius: 5px;
         }
+        
+        /* Media query for mobile devices */
+        @media (max-width: 768px) {
+            #pauseButton {
+                display: block;
+            }
+        }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    <div id="gameInfo">
-        <div>Level: <span id="level">1</span></div>
-        <div>Lives: <span id="lives">3</span></div>
+    <div id="gameContainer">
+        <div id="gameTitle">Crowd Matrix Neo - The One</div>
+        <div id="topBar">
+            <div id="gameInfo">
+                <div>Level: <span id="level">1</span></div>
+                <div>Lives: <span id="lives">3</span></div>
+            </div>
+            <div id="controls">
+                <div>↔ or A/D: Move</div>
+                <div>↓, S, Space: Slow</div>
+            </div>
+        </div>
+        
+        <div style="position: relative;">
+            <canvas id="gameCanvas"></canvas>
+            <button id="pauseButton">II</button>
+        </div>
     </div>
-    <div id="controls">
-        <div><strong>Controls:</strong></div>
-        <div>↔ or A/D: Move left/right</div>
-        <div>↓, S, or Space: Slow down</div>
-    </div>
+    
     <div id="startScreen">
         <h2>Crowd Matrix Neo - The One</h2>
         <p>Navigate through the crowd and reach the other side</p>
         <p>You'll move automatically, but can control left/right and slow down</p>
+        <p>On mobile: Swipe left/right and tap/hold to slow down</p>
         <button id="startButton">Start Game</button>
     </div>
+    
+    <div id="pauseScreen">
+        <h2>Game Paused</h2>
+        <button id="resumeButton">Resume</button>
+    </div>
+    
     <div id="gameOver">
         <h2>Game Over</h2>
         <p>Your score: <span id="finalScore">0</span></p>

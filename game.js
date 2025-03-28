@@ -6,10 +6,16 @@ const ctx = canvas.getContext('2d');
 let player;
 let circles = [];
 let gameActive = false; // Start as inactive until player clicks start
+let gamePaused = false; // Track if game is paused
 let gameInitialized = false; // Track if the game has been initialized
 let level = 1;
 let lives = 3;
 let animationId;
+
+// Mobile touch tracking
+let touchStartX = 0;
+let touchMoveX = 0;
+let isTouching = false;
 
 // Track previous angles for angle change calculation
 let prevAngles = {};
@@ -53,6 +59,9 @@ function init() {
     // Show the start screen
     document.getElementById('startScreen').style.display = 'block';
     
+    // Show controls for level 1, hide for later levels
+    updateControlsVisibility();
+    
     // Log current parameters to console
     console.log('Game initialized with parameters:');
     logGameParams();
@@ -61,6 +70,17 @@ function init() {
     drawInitialState();
     
     gameInitialized = true;
+}
+
+// Update controls visibility based on level
+function updateControlsVisibility() {
+    const controlsElement = document.getElementById('controls');
+    
+    if (level <= 1) {
+        controlsElement.style.opacity = '1';
+    } else {
+        controlsElement.style.opacity = '0';
+    }
 }
 
 // Draw the initial state without starting the game loop
@@ -125,12 +145,37 @@ function updateAngleChangeRates() {
 // Start the game when the player clicks the start button
 function startGame() {
     gameActive = true;
+    gamePaused = false;
     document.getElementById('startScreen').style.display = 'none';
     
     // Start the game loop
     gameLoop();
     
     console.log('Game started!');
+}
+
+// Pause the game
+function pauseGame() {
+    if (!gameActive) return;
+    
+    gamePaused = true;
+    cancelAnimationFrame(animationId);
+    document.getElementById('pauseScreen').style.display = 'block';
+    
+    console.log('Game paused');
+}
+
+// Resume the game
+function resumeGame() {
+    if (!gameActive) return;
+    
+    gamePaused = false;
+    document.getElementById('pauseScreen').style.display = 'none';
+    
+    // Restart the game loop
+    gameLoop();
+    
+    console.log('Game resumed');
 }
 
 // Reset the game with current parameters
@@ -142,7 +187,9 @@ function resetGame() {
     
     // Reset game state
     gameActive = false;
+    gamePaused = false;
     document.getElementById('gameOver').style.display = 'none';
+    document.getElementById('pauseScreen').style.display = 'none';
     document.getElementById('startScreen').style.display = 'block';
     
     // Reset level and lives
@@ -211,7 +258,7 @@ function gameOver() {
 function setupEventListeners() {
     // Keyboard event listeners
     window.addEventListener('keydown', (e) => {
-        if (!gameActive) return;
+        if (!gameActive || gamePaused) return;
         
         switch (e.key) {
             case 'ArrowDown':
@@ -227,11 +274,16 @@ function setupEventListeners() {
             case 'd':
                 player.moving.right = true;
                 break;
+            case 'p':
+            case 'P':
+            case 'Escape':
+                pauseGame();
+                break;
         }
     });
     
     window.addEventListener('keyup', (e) => {
-        if (!gameActive) return;
+        if (!gameActive || gamePaused) return;
         
         switch (e.key) {
             case 'ArrowDown':
@@ -250,8 +302,19 @@ function setupEventListeners() {
         }
     });
     
+    // Touch event listeners for mobile
+    canvas.addEventListener('touchstart', handleTouchStart, false);
+    canvas.addEventListener('touchmove', handleTouchMove, false);
+    canvas.addEventListener('touchend', handleTouchEnd, false);
+    
     // Start button event listener
     document.getElementById('startButton').addEventListener('click', startGame);
+    
+    // Pause button event listener
+    document.getElementById('pauseButton').addEventListener('click', pauseGame);
+    
+    // Resume button event listener
+    document.getElementById('resumeButton').addEventListener('click', resumeGame);
     
     // Restart button event listener
     document.getElementById('restartButton').addEventListener('click', () => {
@@ -260,6 +323,7 @@ function setupEventListeners() {
         level = 1;
         lives = 3;
         gameActive = false;
+        gamePaused = false;
         init();
     });
     
@@ -279,9 +343,61 @@ function setupEventListeners() {
     });
 }
 
+// Handle touch start for mobile controls
+function handleTouchStart(e) {
+    if (!gameActive || gamePaused) return;
+    
+    e.preventDefault();
+    
+    // Get the first touch position
+    touchStartX = e.touches[0].clientX;
+    
+    // Set slowing to true on touch
+    player.slowing = true;
+    isTouching = true;
+}
+
+// Handle touch move for mobile controls
+function handleTouchMove(e) {
+    if (!gameActive || gamePaused || !isTouching) return;
+    
+    e.preventDefault();
+    
+    // Get current touch position
+    touchMoveX = e.touches[0].clientX;
+    
+    // Calculate swipe direction
+    const swipeDistance = touchMoveX - touchStartX;
+    
+    // Set movement based on swipe distance
+    if (swipeDistance > 30) {
+        player.moving.right = true;
+        player.moving.left = false;
+    } else if (swipeDistance < -30) {
+        player.moving.left = true;
+        player.moving.right = false;
+    } else {
+        player.moving.left = false;
+        player.moving.right = false;
+    }
+}
+
+// Handle touch end for mobile controls
+function handleTouchEnd(e) {
+    if (!gameActive || gamePaused) return;
+    
+    e.preventDefault();
+    
+    // Reset movement
+    player.moving.left = false;
+    player.moving.right = false;
+    player.slowing = false;
+    isTouching = false;
+}
+
 // Main game loop
 function gameLoop() {
-    if (!gameActive) return;
+    if (!gameActive || gamePaused) return;
     
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -481,6 +597,9 @@ function checkWin() {
             GAME_PARAMS.CIRCLES_PER_ROW_MAX += 1;
             console.log(`Level ${level}: Increased circles per row to ${GAME_PARAMS.CIRCLES_PER_ROW_MIN}-${GAME_PARAMS.CIRCLES_PER_ROW_MAX}`);
         }
+        
+        // Update controls visibility - hide after level 1
+        updateControlsVisibility();
         
         // Reset player position
         player.x = canvas.width / 2;
