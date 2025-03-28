@@ -11,7 +11,7 @@ A stylish browser-based game inspired by The Matrix, where you play as "The One"
 - Progressive difficulty system that increases complexity with each level
 - Lives system
 - Stippled lines connecting Neo to agents in front
-- Visual collision prediction system with colored lines (first 3 levels only)
+- Visual collision prediction system with colored lines (first 5 levels only)
 - Colorful and dynamic moving obstacles
 - Keyboard controls
 - Adjustable game parameters via console
@@ -32,6 +32,7 @@ A stylish browser-based game inspired by The Matrix, where you play as "The One"
 - Slow Down: Down Arrow, S key, or Space bar
 - Move Left: Left Arrow or A
 - Move Right: Right Arrow or D
+- Pause: P key or Escape key (also via pause button on mobile)
 
 ## Game Mechanics
 
@@ -53,7 +54,7 @@ This creates a steadily increasing challenge as you progress through the game, w
 
 ## Collision Prediction Lines
 
-For the first 3 levels only, the game includes a visual indication system to help predict potential collisions:
+For the first 5 levels only, the game includes a visual indication system to help predict potential collisions:
 
 - **White lines**: Normal paths with good angle change
 - **Yellow lines (thicker)**: Caution - moderate risk of collision
@@ -61,7 +62,7 @@ For the first 3 levels only, the game includes a visual indication system to hel
 
 These colored lines help you identify which paths are the most dangerous. The color is based on how quickly the angle between you and each agent is changing. A nearly constant angle (red line) indicates you're on a collision course.
 
-After level 3, this assistance is removed to increase the challenge.
+After level 5, this assistance is removed to increase the challenge.
 
 ## Adjusting Game Parameters
 
@@ -96,6 +97,13 @@ setGameParam('PLAYER_SPEED', 0.8);        // Adjust forward movement speed
 - `PLAYER_SIZE`: Size of Neo (the player)
 - `PLAYER_SPEED`: Player forward movement speed
 - `STIPPLED_LINE_DASH`: Pattern for stippled lines [dash, gap]
+
+## Mobile Controls
+
+On mobile devices:
+- **Swipe left/right**: Move in that direction
+- **Tap and hold**: Slow down
+- **Pause button**: Located in the top-right corner
 
 ## Files
 

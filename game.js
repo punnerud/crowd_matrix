@@ -148,6 +148,9 @@ function startGame() {
     gamePaused = false;
     document.getElementById('startScreen').style.display = 'none';
     
+    // Show the pause button when game starts
+    document.getElementById('pauseButton').style.display = 'block';
+    
     // Start the game loop
     gameLoop();
     
@@ -191,6 +194,9 @@ function resetGame() {
     document.getElementById('gameOver').style.display = 'none';
     document.getElementById('pauseScreen').style.display = 'none';
     document.getElementById('startScreen').style.display = 'block';
+    
+    // Hide the pause button when game resets
+    document.getElementById('pauseButton').style.display = 'none';
     
     // Reset level and lives
     level = 1;
@@ -250,6 +256,10 @@ function updateGameInfo() {
 function gameOver() {
     gameActive = false;
     cancelAnimationFrame(animationId);
+    
+    // Hide the pause button when game ends
+    document.getElementById('pauseButton').style.display = 'none';
+    
     document.getElementById('finalScore').textContent = level;
     document.getElementById('gameOver').style.display = 'block';
 }
@@ -302,10 +312,32 @@ function setupEventListeners() {
         }
     });
     
-    // Touch event listeners for mobile
-    canvas.addEventListener('touchstart', handleTouchStart, false);
-    canvas.addEventListener('touchmove', handleTouchMove, false);
-    canvas.addEventListener('touchend', handleTouchEnd, false);
+    // Touch event listeners for mobile - using passive: false to prevent scrolling
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    
+    // Prevent default touch behavior on game container to avoid text selection
+    const gameContainer = document.getElementById('gameContainer');
+    if (gameContainer) {
+        gameContainer.addEventListener('touchstart', preventDefault, { passive: false });
+        gameContainer.addEventListener('touchmove', preventDefault, { passive: false });
+    }
+    
+    // Prevent default on specific game elements
+    const elementsToPrevent = [
+        document.getElementById('startScreen'),
+        document.getElementById('pauseScreen'),
+        document.getElementById('gameOver'),
+        document.getElementById('topBar')
+    ];
+    
+    elementsToPrevent.forEach(element => {
+        if (element) {
+            element.addEventListener('touchstart', preventDefault, { passive: false });
+            element.addEventListener('touchmove', preventDefault, { passive: false });
+        }
+    });
     
     // Start button event listener
     document.getElementById('startButton').addEventListener('click', startGame);
@@ -320,6 +352,10 @@ function setupEventListeners() {
     document.getElementById('restartButton').addEventListener('click', () => {
         document.getElementById('gameOver').style.display = 'none';
         document.getElementById('startScreen').style.display = 'block';
+        
+        // Ensure pause button is hidden when returning to start screen
+        document.getElementById('pauseButton').style.display = 'none';
+        
         level = 1;
         lives = 3;
         gameActive = false;
@@ -343,14 +379,20 @@ function setupEventListeners() {
     });
 }
 
+// Helper function to prevent default behavior
+function preventDefault(e) {
+    e.preventDefault();
+}
+
 // Handle touch start for mobile controls
 function handleTouchStart(e) {
-    if (!gameActive || gamePaused) return;
+    e.preventDefault(); // Prevent default behavior like scrolling and text selection
     
-    e.preventDefault();
+    if (!gameActive || gamePaused) return;
     
     // Get the first touch position
     touchStartX = e.touches[0].clientX;
+    touchMoveX = touchStartX; // Initialize touchMoveX to avoid jumps
     
     // Set slowing to true on touch
     player.slowing = true;
@@ -359,9 +401,9 @@ function handleTouchStart(e) {
 
 // Handle touch move for mobile controls
 function handleTouchMove(e) {
-    if (!gameActive || gamePaused || !isTouching) return;
+    e.preventDefault(); // Prevent default behavior like scrolling and text selection
     
-    e.preventDefault();
+    if (!gameActive || gamePaused || !isTouching) return;
     
     // Get current touch position
     touchMoveX = e.touches[0].clientX;
@@ -369,11 +411,11 @@ function handleTouchMove(e) {
     // Calculate swipe direction
     const swipeDistance = touchMoveX - touchStartX;
     
-    // Set movement based on swipe distance
-    if (swipeDistance > 30) {
+    // Set movement based on swipe distance - lower threshold for better responsiveness
+    if (swipeDistance > 10) {
         player.moving.right = true;
         player.moving.left = false;
-    } else if (swipeDistance < -30) {
+    } else if (swipeDistance < -10) {
         player.moving.left = true;
         player.moving.right = false;
     } else {
@@ -384,9 +426,9 @@ function handleTouchMove(e) {
 
 // Handle touch end for mobile controls
 function handleTouchEnd(e) {
-    if (!gameActive || gamePaused) return;
+    e.preventDefault(); // Prevent default behavior
     
-    e.preventDefault();
+    if (!gameActive || gamePaused) return;
     
     // Reset movement
     player.moving.left = false;
@@ -513,8 +555,8 @@ function drawStippledLines() {
             let lineWidth = 1;
             let lineColor = 'rgba(255, 255, 255, 0.4)';
             
-            // Only apply colored indicators for levels 1-3
-            if (level <= 3 && angleChangeRates[circleId] !== undefined) {
+            // Only apply colored indicators for levels 1-5
+            if (level <= 5 && angleChangeRates[circleId] !== undefined) {
                 // Thresholds for color changes based on angle change rate
                 // Increasing sensitivity - show warnings earlier
                 const lowThreshold = 0.0004; // Threshold for yellow warning (higher value = earlier warning)

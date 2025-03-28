@@ -108,7 +108,7 @@
             border-radius: 5px;
             cursor: pointer;
             z-index: 5;
-            display: none; /* Hidden by default, shown on mobile */
+            display: none; /* Initially hidden, will be shown after game starts */
         }
         
         #gameOver {
@@ -166,11 +166,23 @@
             border-radius: 5px;
         }
         
-        /* Media query for mobile devices */
+        /* Media query for mobile devices - no longer needed for pause button visibility */
         @media (max-width: 768px) {
             #pauseButton {
-                display: block;
+                /* Remove display: block rule as we'll control this with JavaScript */
             }
+        }
+        
+        /* Prevent text selection during touch interactions */
+        body, #gameContainer, #gameCanvas, #topBar, #startScreen, #pauseScreen, #gameOver, 
+        #controls, .gameTitle, .instructions, .button {
+            -webkit-touch-callout: none; /* iOS Safari */
+            -webkit-user-select: none;   /* Safari */
+            -khtml-user-select: none;    /* Konqueror HTML */
+            -moz-user-select: none;      /* Firefox */
+            -ms-user-select: none;       /* Internet Explorer/Edge */
+            user-select: none;           /* Non-prefixed version, supported by Chrome, Opera and Firefox */
+            touch-action: manipulation;  /* Disable double-tap zoom */
         }
     </style>
 </head>
