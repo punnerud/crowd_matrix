@@ -62,6 +62,20 @@ function resizeGameCanvas() {
         // Scale x position
         player.x = (player.x / oldWidth) * canvas.width;
         
+        // Determine if we're on mobile
+        const isMobile = window.innerWidth < 768;
+        
+        // Calculate speed multiplier for mobile devices
+        const mobileSpeedMultiplier = isMobile ? 1.5 : 1.0; // 1.5x speed on mobile
+        
+        // Update player speeds based on current device
+        player.baseSpeed = GAME_PARAMS.PLAYER_SPEED * mobileSpeedMultiplier;
+        player.currentSpeed = player.slowing ? 
+            GAME_PARAMS.PLAYER_SPEED * 0.3 * mobileSpeedMultiplier : 
+            GAME_PARAMS.PLAYER_SPEED * mobileSpeedMultiplier;
+        player.minSpeed = GAME_PARAMS.PLAYER_SPEED * 0.3 * mobileSpeedMultiplier;
+        player.horizontalSpeed = isMobile ? GAME_PARAMS.PLAYER_SPEED * 0.6 * mobileSpeedMultiplier : GAME_PARAMS.PLAYER_SPEED;
+        
         // Always position player at the bottom of screen
         // Only reposition if player is near bottom
         if (player.y > oldHeight * 0.7) {
@@ -100,18 +114,21 @@ function init() {
     // Always place player at bottom of game area, regardless of device
     const verticalPosition = canvas.height - GAME_PARAMS.PLAYER_SIZE;
     
+    // Calculate speed multiplier for mobile devices
+    const mobileSpeedMultiplier = isMobile ? 1.5 : 1.0; // 1.5x speed on mobile
+    
     // Create player with device-specific speeds
     player = {
         x: canvas.width / 2,
         y: verticalPosition,
         size: GAME_PARAMS.PLAYER_SIZE,
         color: '#00FF41', // Matrix green color for Neo
-        baseSpeed: GAME_PARAMS.PLAYER_SPEED, // Base forward speed
-        currentSpeed: GAME_PARAMS.PLAYER_SPEED, // Current speed (can be slowed)
-        minSpeed: GAME_PARAMS.PLAYER_SPEED * 0.3, // Minimum speed when slowing down
+        baseSpeed: GAME_PARAMS.PLAYER_SPEED * mobileSpeedMultiplier, // Apply speed multiplier for mobile
+        currentSpeed: GAME_PARAMS.PLAYER_SPEED * mobileSpeedMultiplier, // Apply speed multiplier for mobile
+        minSpeed: GAME_PARAMS.PLAYER_SPEED * 0.3 * mobileSpeedMultiplier, // Apply speed multiplier for mobile slow mode
         slowing: false, // Flag to track if user is slowing down
-        // Reduce horizontal movement speed on mobile
-        horizontalSpeed: isMobile ? GAME_PARAMS.PLAYER_SPEED * 0.6 : GAME_PARAMS.PLAYER_SPEED,
+        // Horizontal movement speed also gets the mobile multiplier
+        horizontalSpeed: isMobile ? GAME_PARAMS.PLAYER_SPEED * 0.6 * mobileSpeedMultiplier : GAME_PARAMS.PLAYER_SPEED,
         moving: {
             left: false,
             right: false
@@ -140,6 +157,7 @@ function init() {
     // Log current parameters to console
     console.log('Game initialized with parameters:');
     logGameParams();
+    console.log(`Player speed multiplier on mobile: ${mobileSpeedMultiplier}x`);
     
     // Draw the initial state
     drawInitialState();
@@ -771,9 +789,21 @@ function handleCollision() {
     if (lives <= 0) {
         gameOver();
     } else {
+        // Determine if we're on mobile (using screen width as a basic detection method)
+        const isMobile = window.innerWidth < 768;
+        
+        // Calculate speed multiplier for mobile devices
+        const mobileSpeedMultiplier = isMobile ? 1.5 : 1.0; // 1.5x speed on mobile
+        
         // Reset player position to bottom of screen
         player.x = canvas.width / 2;
         player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE;
+        
+        // Ensure speed properties are maintained after collision
+        player.baseSpeed = GAME_PARAMS.PLAYER_SPEED * mobileSpeedMultiplier;
+        player.currentSpeed = GAME_PARAMS.PLAYER_SPEED * mobileSpeedMultiplier;
+        player.minSpeed = GAME_PARAMS.PLAYER_SPEED * 0.3 * mobileSpeedMultiplier;
+        player.horizontalSpeed = isMobile ? GAME_PARAMS.PLAYER_SPEED * 0.6 * mobileSpeedMultiplier : GAME_PARAMS.PLAYER_SPEED;
     }
 }
 
@@ -801,16 +831,27 @@ function checkWin() {
         // Update controls visibility - hide after level 1
         updateControlsVisibility();
         
+        // Determine if we're on mobile (using screen width as a basic detection method)
+        const isMobile = window.innerWidth < 768;
+        
+        // Calculate speed multiplier for mobile devices
+        const mobileSpeedMultiplier = isMobile ? 1.5 : 1.0; // 1.5x speed on mobile
+        
         // Reset player position to bottom of screen
         player.x = canvas.width / 2;
         player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE;
+        
+        // Ensure speed properties are maintained after level change
+        player.baseSpeed = GAME_PARAMS.PLAYER_SPEED * mobileSpeedMultiplier;
+        player.currentSpeed = GAME_PARAMS.PLAYER_SPEED * mobileSpeedMultiplier;
+        player.minSpeed = GAME_PARAMS.PLAYER_SPEED * 0.3 * mobileSpeedMultiplier;
+        player.horizontalSpeed = isMobile ? GAME_PARAMS.PLAYER_SPEED * 0.6 * mobileSpeedMultiplier : GAME_PARAMS.PLAYER_SPEED;
         
         // Reset angle tracking for new level
         prevAngles = {};
         angleChangeRates = {};
         
         // Generate new circles with updated parameters
-        const isMobile = window.innerWidth < 768;
         generateCircles(isMobile);
         
         // Log that we've generated new circles with updated vertical positioning
