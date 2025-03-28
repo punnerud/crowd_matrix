@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crowd Matrix Neo - The One</title>
+    <!-- Game Parameters - Adjust these to change game difficulty -->
+    <script>
+        // Game parameters that can be adjusted
+        const GAME_PARAMS = {
+            // Circle parameters
+            CIRCLES_PER_ROW_MIN: 2,    // Minimum circles per row
+            CIRCLES_PER_ROW_MAX: 3,    // Maximum circles per row
+            CIRCLE_SIZE: 5,           // Size of the circles
+            CIRCLE_SPEED_MIN: 0.2,    // Minimum circle speed (10x slower)
+            CIRCLE_SPEED_MAX: 0.5,    // Maximum circle speed (10x slower)
+            
+            // Game setup
+            ROWS: 4,                   // Number of rows with moving circles
+            PLAYER_SIZE: 20,           // Size of the player
+            PLAYER_SPEED: 0.5,         // Player movement speed (10x slower)
+            STIPPLED_LINE_DASH: [5, 5] // Pattern for stippled lines [dash, gap]
+        };
+        
+        // Function to adjust game parameters from console
+        function setGameParam(param, value) {
+            if (GAME_PARAMS.hasOwnProperty(param)) {
+                GAME_PARAMS[param] = value;
+                console.log(`Set ${param} to ${value}`);
+                // Restart the game with new parameters if it's already initialized
+                if (typeof resetGame === 'function') {
+                    resetGame();
+                }
+            } else {
+                console.error(`Unknown parameter: ${param}`);
+                console.log('Available parameters:', Object.keys(GAME_PARAMS));
+            }
+        }
+        
+        // Function to log all current parameters
+        function logGameParams() {
+            console.table(GAME_PARAMS);
+        }
+    </script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #222;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameCanvas {
+            background-color: #333;
+            border: 2px solid #444;
+        }
+        
+        #gameInfo {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+        
+        #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="gameInfo">
+        <div>Level: <span id="level">1</span></div>
+        <div>Lives: <span id="lives">3</span></div>
+    </div>
+    <div id="controls">
+        <div><strong>Controls:</strong></div>
+        <div>↔ or A/D: Move left/right</div>
+        <div>↓, S, or Space: Slow down</div>
+    </div>
+    <div id="startScreen">
+        <h2>Crowd Matrix Neo - The One</h2>
+        <p>Navigate through the crowd and reach the other side</p>
+        <p>You'll move automatically, but can control left/right and slow down</p>
+        <button id="startButton">Start Game</button>
+    </div>
+    <div id="gameOver">
+        <h2>Game Over</h2>
+        <p>Your score: <span id="finalScore">0</span></p>
+        <button id="restartButton">Play Again</button>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html> 
