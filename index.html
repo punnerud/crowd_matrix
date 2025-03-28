@@ -166,10 +166,24 @@
             border-radius: 5px;
         }
         
-        /* Media query for mobile devices - no longer needed for pause button visibility */
+        /* Additional mobile adjustments */
         @media (max-width: 768px) {
+            body {
+                justify-content: flex-start;
+                padding-top: 5vh; /* Add some space at the top */
+            }
+            
+            #gameContainer {
+                margin-top: 2vh; /* Add margin at the top */
+            }
+            
+            #gameTitle {
+                font-size: 20px; /* Slightly smaller title on mobile */
+                margin-bottom: 5px;
+            }
+            
             #pauseButton {
-                /* Remove display: block rule as we'll control this with JavaScript */
+                /* Now using JavaScript to control visibility */
             }
         }
         

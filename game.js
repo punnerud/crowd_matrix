@@ -27,10 +27,18 @@ function init() {
     canvas.width = window.innerWidth * 0.8;
     canvas.height = window.innerHeight * 0.8;
     
+    // Determine if we're on mobile (using screen width as a basic detection method)
+    const isMobile = window.innerWidth < 768;
+    
+    // Adjust the player's vertical position based on device
+    const verticalPosition = isMobile 
+        ? canvas.height - (canvas.height * 0.3) // Position 30% from bottom on mobile
+        : canvas.height - GAME_PARAMS.PLAYER_SIZE; // Default position for desktop
+    
     // Create player
     player = {
         x: canvas.width / 2,
-        y: canvas.height - GAME_PARAMS.PLAYER_SIZE,
+        y: verticalPosition,
         size: GAME_PARAMS.PLAYER_SIZE,
         color: '#00FF41', // Matrix green color for Neo
         baseSpeed: GAME_PARAMS.PLAYER_SPEED, // Base forward speed
@@ -43,8 +51,8 @@ function init() {
         }
     };
     
-    // Generate circles for each row
-    generateCircles();
+    // Generate circles for each row - adjusted for mobile vertical positioning
+    generateCircles(isMobile);
     
     // Reset angle tracking
     prevAngles = {};
@@ -214,13 +222,17 @@ function resetGame() {
 }
 
 // Generate circles for all rows
-function generateCircles() {
+function generateCircles(isMobile = false) {
     circles = [];
     
     const rowHeight = canvas.height / (GAME_PARAMS.ROWS + 2); // +2 for start and end safe zones
     
+    // Adjust vertical offset for mobile
+    const verticalOffset = isMobile ? (canvas.height * 0.2) : 0; // 20% top offset on mobile
+    
     for (let i = 0; i < GAME_PARAMS.ROWS; i++) {
-        const y = rowHeight * (i + 1);
+        // Calculate row position, applying the mobile offset if needed
+        const y = rowHeight * (i + 1) - verticalOffset;
         const direction = i % 2 === 0 ? 1 : -1; // Alternate direction
         const speed = GAME_PARAMS.CIRCLE_SPEED_MIN + (Math.random() * (GAME_PARAMS.CIRCLE_SPEED_MAX - GAME_PARAMS.CIRCLE_SPEED_MIN));
         const circlesInRow = Math.floor(GAME_PARAMS.CIRCLES_PER_ROW_MIN + Math.random() * (GAME_PARAMS.CIRCLES_PER_ROW_MAX - GAME_PARAMS.CIRCLES_PER_ROW_MIN + 1));
@@ -411,13 +423,23 @@ function handleTouchMove(e) {
     // Calculate swipe direction
     const swipeDistance = touchMoveX - touchStartX;
     
-    // Set movement based on swipe distance - lower threshold for better responsiveness
-    if (swipeDistance > 10) {
+    // Set movement based on swipe distance - using a much lower threshold for better responsiveness
+    if (swipeDistance > 5) {
         player.moving.right = true;
         player.moving.left = false;
-    } else if (swipeDistance < -10) {
+        
+        // Add a small multiplier for faster movement on larger swipes
+        if (swipeDistance > 30 && player.x < canvas.width - player.size) {
+            player.x += Math.min(swipeDistance / 30, 3); // Cap the boost
+        }
+    } else if (swipeDistance < -5) {
         player.moving.left = true;
         player.moving.right = false;
+        
+        // Add a small multiplier for faster movement on larger swipes
+        if (swipeDistance < -30 && player.x > 0) {
+            player.x += Math.max(swipeDistance / 30, -3); // Cap the boost
+        }
     } else {
         player.moving.left = false;
         player.moving.right = false;
@@ -613,9 +635,16 @@ function handleCollision() {
     if (lives <= 0) {
         gameOver();
     } else {
-        // Reset player position
+        // Determine if we're on mobile
+        const isMobile = window.innerWidth < 768;
+        
+        // Reset player position with mobile adjustment
         player.x = canvas.width / 2;
-        player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE;
+        if (isMobile) {
+            player.y = canvas.height - (canvas.height * 0.3); // Position 30% from bottom on mobile
+        } else {
+            player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE; // Default position for desktop
+        }
     }
 }
 
@@ -643,16 +672,23 @@ function checkWin() {
         // Update controls visibility - hide after level 1
         updateControlsVisibility();
         
-        // Reset player position
+        // Determine if we're on mobile
+        const isMobile = window.innerWidth < 768;
+        
+        // Reset player position with mobile adjustment
         player.x = canvas.width / 2;
-        player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE;
+        if (isMobile) {
+            player.y = canvas.height - (canvas.height * 0.3); // Position 30% from bottom on mobile
+        } else {
+            player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE; // Default position for desktop
+        }
         
         // Reset angle tracking for new level
         prevAngles = {};
         angleChangeRates = {};
         
         // Generate new circles with updated parameters
-        generateCircles();
+        generateCircles(isMobile);
     }
 }
 
