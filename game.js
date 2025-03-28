@@ -351,17 +351,21 @@ function setupEventListeners() {
         }
     });
     
-    // Start button event listener
-    document.getElementById('startButton').addEventListener('click', startGame);
+    // Add both click and touch event listeners for buttons
+    const startButton = document.getElementById('startButton');
+    addButtonEventListener(startButton, startGame);
     
     // Pause button event listener
-    document.getElementById('pauseButton').addEventListener('click', pauseGame);
+    const pauseButton = document.getElementById('pauseButton');
+    addButtonEventListener(pauseButton, pauseGame);
     
     // Resume button event listener
-    document.getElementById('resumeButton').addEventListener('click', resumeGame);
+    const resumeButton = document.getElementById('resumeButton');
+    addButtonEventListener(resumeButton, resumeGame);
     
     // Restart button event listener
-    document.getElementById('restartButton').addEventListener('click', () => {
+    const restartButton = document.getElementById('restartButton');
+    addButtonEventListener(restartButton, () => {
         document.getElementById('gameOver').style.display = 'none';
         document.getElementById('startScreen').style.display = 'block';
         
@@ -394,6 +398,35 @@ function setupEventListeners() {
 // Helper function to prevent default behavior
 function preventDefault(e) {
     e.preventDefault();
+}
+
+// Helper function to add both click and touch event listeners to an element
+function addButtonEventListener(element, eventHandler) {
+    if (!element) return;
+    
+    // Regular click for desktop
+    element.addEventListener('click', eventHandler);
+    
+    // Touch events for mobile
+    element.addEventListener('touchend', function(e) {
+        // Prevent ghost clicks and default behavior
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Don't trigger if the touch moved too much (likely a scroll)
+        if (e.changedTouches && e.changedTouches[0]) {
+            const touch = e.changedTouches[0];
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            // Only fire if we're still on the button
+            if (element.contains(target) || element === target) {
+                eventHandler(e);
+            }
+        } else {
+            // Fallback if no changed touches
+            eventHandler(e);
+        }
+    }, { passive: false });
 }
 
 // Handle touch start for mobile controls

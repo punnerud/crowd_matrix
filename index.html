@@ -164,6 +164,9 @@
             margin: 10px 2px;
             cursor: pointer;
             border-radius: 5px;
+            /* Make buttons more touch-friendly */
+            min-width: 150px;
+            min-height: 44px; /* Apple's recommended minimum touch target size */
         }
         
         /* Additional mobile adjustments */
@@ -182,8 +185,23 @@
                 margin-bottom: 5px;
             }
             
+            button {
+                /* Enhanced touch area for buttons on mobile */
+                min-height: 50px;
+                margin: 15px 2px;
+                font-size: 18px;
+            }
+            
             #pauseButton {
                 /* Now using JavaScript to control visibility */
+                min-height: 36px; /* Smaller for the pause button */
+                min-width: 36px;
+            }
+            
+            /* Ensure the start screen is fully visible and responsive */
+            #startScreen, #pauseScreen, #gameOver {
+                width: 80%;
+                max-width: 500px;
             }
         }
         
