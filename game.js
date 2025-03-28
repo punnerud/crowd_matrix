@@ -21,11 +21,84 @@ let isTouching = false;
 let prevAngles = {};
 let angleChangeRates = {};
 
+// Calculate safe canvas size based on viewport
+function calculateCanvasSize() {
+    const isMobile = window.innerWidth < 768;
+    const isKeyboardVisible = document.body.classList.contains('keyboard-visible');
+    
+    let widthRatio = 0.8;
+    let heightRatio = 0.8;
+    
+    // Adjust ratios for mobile with keyboard
+    if (isMobile) {
+        if (isKeyboardVisible) {
+            heightRatio = 0.7; // Smaller height when keyboard is visible
+            widthRatio = 0.95; // Wider to use available space
+        } else {
+            heightRatio = 0.75; // Use more vertical space on mobile
+        }
+    }
+    
+    return {
+        width: Math.floor(window.innerWidth * widthRatio),
+        height: Math.floor(window.innerHeight * heightRatio)
+    };
+}
+
+// Resize the game canvas and update game elements
+function resizeGameCanvas() {
+    if (!gameInitialized) return;
+    
+    const size = calculateCanvasSize();
+    const oldWidth = canvas.width;
+    const oldHeight = canvas.height;
+    
+    // Update canvas size
+    canvas.width = size.width;
+    canvas.height = size.height;
+    
+    // Reposition player proportionally if game is active
+    if (player) {
+        // Scale x position
+        player.x = (player.x / oldWidth) * canvas.width;
+        
+        // Determine if we're on mobile
+        const isMobile = window.innerWidth < 768;
+        
+        // Recalculate vertical position
+        if (isMobile) {
+            player.y = canvas.height - (canvas.height * 0.3);
+        } else {
+            // Keep proportion if not at bottom
+            if (player.y < oldHeight - GAME_PARAMS.PLAYER_SIZE) {
+                player.y = (player.y / oldHeight) * canvas.height;
+            } else {
+                player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE;
+            }
+        }
+    }
+    
+    // Regenerate circles with proper positioning if game is active
+    if (circles.length > 0) {
+        const isMobile = window.innerWidth < 768;
+        generateCircles(isMobile);
+    }
+    
+    // If the game is not active, redraw the static state
+    if (!gameActive && gameInitialized) {
+        drawInitialState();
+    }
+}
+
+// Make the resize function available globally
+window.resizeGameCanvas = resizeGameCanvas;
+
 // Initialize the game
 function init() {
-    // Set canvas size
-    canvas.width = window.innerWidth * 0.8;
-    canvas.height = window.innerHeight * 0.8;
+    // Set canvas size based on viewport
+    const size = calculateCanvasSize();
+    canvas.width = size.width;
+    canvas.height = size.height;
     
     // Determine if we're on mobile (using screen width as a basic detection method)
     const isMobile = window.innerWidth < 768;
@@ -35,7 +108,7 @@ function init() {
         ? canvas.height - (canvas.height * 0.3) // Position 30% from bottom on mobile
         : canvas.height - GAME_PARAMS.PLAYER_SIZE; // Default position for desktop
     
-    // Create player
+    // Create player with device-specific speeds
     player = {
         x: canvas.width / 2,
         y: verticalPosition,
@@ -45,6 +118,8 @@ function init() {
         currentSpeed: GAME_PARAMS.PLAYER_SPEED, // Current speed (can be slowed)
         minSpeed: GAME_PARAMS.PLAYER_SPEED * 0.3, // Minimum speed when slowing down
         slowing: false, // Flag to track if user is slowing down
+        // Reduce horizontal movement speed on mobile
+        horizontalSpeed: isMobile ? GAME_PARAMS.PLAYER_SPEED * 0.6 : GAME_PARAMS.PLAYER_SPEED,
         moving: {
             left: false,
             right: false
@@ -381,17 +456,7 @@ function setupEventListeners() {
     
     // Resize event
     window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth * 0.8;
-        canvas.height = window.innerHeight * 0.8;
-        
-        // Reset player position
-        player.x = canvas.width / 2;
-        player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE;
-        
-        // If the game is not active, redraw the static state
-        if (!gameActive && gameInitialized) {
-            drawInitialState();
-        }
+        resizeGameCanvas();
     });
 }
 
@@ -461,17 +526,21 @@ function handleTouchMove(e) {
         player.moving.right = true;
         player.moving.left = false;
         
-        // Add a small multiplier for faster movement on larger swipes
-        if (swipeDistance > 30 && player.x < canvas.width - player.size) {
-            player.x += Math.min(swipeDistance / 30, 3); // Cap the boost
+        // Add a small multiplier for faster movement on larger swipes, but keep it gentler
+        if (swipeDistance > 40 && player.x < canvas.width - player.size) {
+            // Reduce the multiplier (from 30 to 50) to make boost slower
+            // Reduce the maximum cap (from 3 to 2) to limit maximum boost
+            player.x += Math.min(swipeDistance / 50, 2); 
         }
     } else if (swipeDistance < -5) {
         player.moving.left = true;
         player.moving.right = false;
         
-        // Add a small multiplier for faster movement on larger swipes
-        if (swipeDistance < -30 && player.x > 0) {
-            player.x += Math.max(swipeDistance / 30, -3); // Cap the boost
+        // Add a small multiplier for faster movement on larger swipes, but keep it gentler
+        if (swipeDistance < -40 && player.x > 0) {
+            // Reduce the multiplier (from 30 to 50) to make boost slower
+            // Reduce the maximum cap (from 3 to 2) to limit maximum boost
+            player.x += Math.max(swipeDistance / 50, -2);
         }
     } else {
         player.moving.left = false;
@@ -559,13 +628,13 @@ function updatePlayerPosition() {
     player.y -= player.currentSpeed;
     if (player.y < 0) player.y = 0;
     
-    // Left/right movement
+    // Left/right movement - use horizontalSpeed property instead of baseSpeed for better mobile control
     if (player.moving.left) {
-        player.x -= player.baseSpeed;
+        player.x -= player.horizontalSpeed;
         if (player.x < 0) player.x = 0;
     }
     if (player.moving.right) {
-        player.x += player.baseSpeed;
+        player.x += player.horizontalSpeed;
         if (player.x > canvas.width - player.size) player.x = canvas.width - player.size;
     }
 }
@@ -599,50 +668,70 @@ function drawStippledLines() {
     ctx.lineWidth = 1;
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
     
-    // Draw lines to all circles that are in front of the player
+    // Draw lines to circles that are approaching the player
     circles.forEach(circle => {
         // Only draw lines to circles that are above the player (in front)
         if (circle.y < player.y) {
-            // Get the circle's ID for angle tracking
-            const circleId = `${circle.row}-${circles.indexOf(circle)}`;
+            // Calculate if this circle is moving toward the player
+            const isApproaching = isCircleApproachingPlayer(circle, player);
             
-            // Default line properties
-            let lineWidth = 1;
-            let lineColor = 'rgba(255, 255, 255, 0.4)';
-            
-            // Only apply colored indicators for levels 1-5
-            if (level <= 5 && angleChangeRates[circleId] !== undefined) {
-                // Thresholds for color changes based on angle change rate
-                // Increasing sensitivity - show warnings earlier
-                const lowThreshold = 0.0004; // Threshold for yellow warning (higher value = earlier warning)
-                const highThreshold = 0.0002; // Threshold for red danger (now at previous yellow threshold)
+            // Only draw lines for approaching circles
+            if (isApproaching) {
+                // Get the circle's ID for angle tracking
+                const circleId = `${circle.row}-${circles.indexOf(circle)}`;
                 
-                // Apply color and thickness based on angle change rate
-                if (angleChangeRates[circleId] < highThreshold) {
-                    // Red - Very low angle change rate means a likely collision path
-                    lineColor = 'rgba(255, 50, 50, 0.8)';
-                    lineWidth = 3;
-                } else if (angleChangeRates[circleId] < lowThreshold) {
-                    // Yellow - Moderately low angle change rate means caution
-                    lineColor = 'rgba(255, 255, 0, 0.6)';
-                    lineWidth = 2;
+                // Default line properties
+                let lineWidth = 1;
+                let lineColor = 'rgba(255, 255, 255, 0.4)';
+                
+                // Only apply colored indicators for levels 1-5
+                if (level <= 5 && angleChangeRates[circleId] !== undefined) {
+                    // Thresholds for color changes based on angle change rate
+                    // Increasing sensitivity - show warnings earlier
+                    const lowThreshold = 0.0004; // Threshold for yellow warning (higher value = earlier warning)
+                    const highThreshold = 0.0002; // Threshold for red danger (now at previous yellow threshold)
+                    
+                    // Apply color and thickness based on angle change rate
+                    if (angleChangeRates[circleId] < highThreshold) {
+                        // Red - Very low angle change rate means a likely collision path
+                        lineColor = 'rgba(255, 50, 50, 0.8)';
+                        lineWidth = 3;
+                    } else if (angleChangeRates[circleId] < lowThreshold) {
+                        // Yellow - Moderately low angle change rate means caution
+                        lineColor = 'rgba(255, 255, 0, 0.6)';
+                        lineWidth = 2;
+                    }
                 }
+                
+                // Apply the line style
+                ctx.lineWidth = lineWidth;
+                ctx.strokeStyle = lineColor;
+                
+                // Draw the line
+                ctx.beginPath();
+                ctx.moveTo(player.x, player.y);
+                ctx.lineTo(circle.x, circle.y);
+                ctx.stroke();
             }
-            
-            // Apply the line style
-            ctx.lineWidth = lineWidth;
-            ctx.strokeStyle = lineColor;
-            
-            // Draw the line
-            ctx.beginPath();
-            ctx.moveTo(player.x, player.y);
-            ctx.lineTo(circle.x, circle.y);
-            ctx.stroke();
         }
     });
     
     // Restore context state
     ctx.restore();
+}
+
+// Determine if a circle is approaching the player based on its movement
+function isCircleApproachingPlayer(circle, player) {
+    // Circle moving right (positive speed)
+    if (circle.speed > 0) {
+        // If circle is to the left of the player, it's approaching
+        return circle.x < player.x;
+    } 
+    // Circle moving left (negative speed)
+    else {
+        // If circle is to the right of the player, it's approaching
+        return circle.x > player.x;
+    }
 }
 
 // Check for collisions between player and circles

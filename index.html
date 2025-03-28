@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Crowd Matrix Neo - The One</title>
     <!-- Game Parameters - Adjust these to change game difficulty -->
     <script>
@@ -41,6 +41,44 @@
         function logGameParams() {
             console.table(GAME_PARAMS);
         }
+        
+        // Variables to track viewport changes
+        let initialHeight;
+        let isKeyboardVisible = false;
+        
+        // Function to handle viewport resize and keyboard appearance
+        function handleViewportChanges() {
+            const viewportHeight = window.innerHeight;
+            
+            // Initialize height if not set
+            if (!initialHeight) {
+                initialHeight = viewportHeight;
+                return;
+            }
+            
+            // Check if keyboard appears/disappears
+            if (viewportHeight < initialHeight * 0.8) {
+                isKeyboardVisible = true;
+                document.body.classList.add('keyboard-visible');
+            } else {
+                isKeyboardVisible = false;
+                document.body.classList.remove('keyboard-visible');
+            }
+            
+            // Force a game resize to adapt to new viewport
+            if (window.resizeGameCanvas) {
+                window.resizeGameCanvas();
+            }
+        }
+        
+        // Set up viewport change detection
+        window.addEventListener('resize', handleViewportChanges);
+        window.addEventListener('orientationchange', handleViewportChanges);
+        
+        // Initial call after page loads
+        window.addEventListener('load', () => {
+            setTimeout(handleViewportChanges, 100);
+        });
     </script>
     <style>
         body {
@@ -53,6 +91,15 @@
             background-color: #222;
             overflow: hidden;
             font-family: Arial, sans-serif;
+            touch-action: manipulation;
+        }
+        
+        /* Additional class for when keyboard is visible */
+        body.keyboard-visible {
+            justify-content: flex-start;
+            padding-top: 10px;
+            height: auto;
+            min-height: 100vh;
         }
         
         #gameContainer {
@@ -176,13 +223,30 @@
                 padding-top: 5vh; /* Add some space at the top */
             }
             
+            body.keyboard-visible {
+                padding-top: 10px; /* Less padding when keyboard is visible */
+            }
+            
             #gameContainer {
                 margin-top: 2vh; /* Add margin at the top */
+                width: 100%;
+                max-width: 100vw;
+                transform-origin: top center;
+            }
+            
+            .keyboard-visible #gameContainer {
+                margin-top: 5px;
+                transform: scale(0.9); /* Slightly scale down when keyboard is visible */
             }
             
             #gameTitle {
                 font-size: 20px; /* Slightly smaller title on mobile */
                 margin-bottom: 5px;
+            }
+            
+            .keyboard-visible #gameTitle {
+                font-size: 16px;
+                margin-bottom: 2px;
             }
             
             button {
@@ -202,6 +266,14 @@
             #startScreen, #pauseScreen, #gameOver {
                 width: 80%;
                 max-width: 500px;
+                max-height: 90vh;
+                overflow-y: auto; /* Allow scrolling if needed */
+            }
+            
+            .keyboard-visible #startScreen, 
+            .keyboard-visible #pauseScreen, 
+            .keyboard-visible #gameOver {
+                max-height: 80vh;
             }
         }
         
