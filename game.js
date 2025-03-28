@@ -62,19 +62,13 @@ function resizeGameCanvas() {
         // Scale x position
         player.x = (player.x / oldWidth) * canvas.width;
         
-        // Determine if we're on mobile
-        const isMobile = window.innerWidth < 768;
-        
-        // Recalculate vertical position
-        if (isMobile) {
-            player.y = canvas.height - (canvas.height * 0.3);
+        // Always position player at the bottom of screen
+        // Only reposition if player is near bottom
+        if (player.y > oldHeight * 0.7) {
+            player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE;
         } else {
-            // Keep proportion if not at bottom
-            if (player.y < oldHeight - GAME_PARAMS.PLAYER_SIZE) {
-                player.y = (player.y / oldHeight) * canvas.height;
-            } else {
-                player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE;
-            }
+            // Scale position proportionally if player is moving up
+            player.y = (player.y / oldHeight) * canvas.height;
         }
     }
     
@@ -103,10 +97,8 @@ function init() {
     // Determine if we're on mobile (using screen width as a basic detection method)
     const isMobile = window.innerWidth < 768;
     
-    // Adjust the player's vertical position based on device
-    const verticalPosition = isMobile 
-        ? canvas.height - (canvas.height * 0.3) // Position 30% from bottom on mobile
-        : canvas.height - GAME_PARAMS.PLAYER_SIZE; // Default position for desktop
+    // Always place player at bottom of game area, regardless of device
+    const verticalPosition = canvas.height - GAME_PARAMS.PLAYER_SIZE;
     
     // Create player with device-specific speeds
     player = {
@@ -300,18 +292,40 @@ function resetGame() {
 function generateCircles(isMobile = false) {
     circles = [];
     
-    const rowHeight = canvas.height / (GAME_PARAMS.ROWS + 2); // +2 for start and end safe zones
+    // Calculate the space needed for all rows
+    const totalGameRows = GAME_PARAMS.ROWS + 2; // +2 for start and end safe zones
+    const rowHeight = canvas.height / totalGameRows;
     
-    // Adjust vertical offset for mobile
-    const verticalOffset = isMobile ? (canvas.height * 0.2) : 0; // 20% top offset on mobile
+    // Determine proper vertical offset to ensure the top row is always visible
+    let verticalOffset;
+    
+    if (isMobile) {
+        // On mobile, apply a stronger offset to guarantee top row visibility
+        // Force the first row to be at least 10% from the top of the screen
+        verticalOffset = rowHeight - (canvas.height * 0.1);
+    } else {
+        // On desktop, use a smaller offset
+        verticalOffset = rowHeight * 0.3;
+    }
+    
+    // Ensure offset is positive
+    verticalOffset = Math.max(0, verticalOffset);
+    
+    // Debug log to verify
+    console.log(`Generating circles with verticalOffset: ${verticalOffset}, rowHeight: ${rowHeight}, isMobile: ${isMobile}`);
     
     for (let i = 0; i < GAME_PARAMS.ROWS; i++) {
-        // Calculate row position, applying the mobile offset if needed
+        // Calculate row position, applying the vertical offset
         const y = rowHeight * (i + 1) - verticalOffset;
         const direction = i % 2 === 0 ? 1 : -1; // Alternate direction
         const speed = GAME_PARAMS.CIRCLE_SPEED_MIN + (Math.random() * (GAME_PARAMS.CIRCLE_SPEED_MAX - GAME_PARAMS.CIRCLE_SPEED_MIN));
         const circlesInRow = Math.floor(GAME_PARAMS.CIRCLES_PER_ROW_MIN + Math.random() * (GAME_PARAMS.CIRCLES_PER_ROW_MAX - GAME_PARAMS.CIRCLES_PER_ROW_MIN + 1));
         const spacing = canvas.width / circlesInRow;
+        
+        // Debug log for first row position
+        if (i === 0) {
+            console.log(`First row Y position: ${y}, canvas.height: ${canvas.height}`);
+        }
         
         for (let j = 0; j < circlesInRow; j++) {
             const circle = {
@@ -757,16 +771,9 @@ function handleCollision() {
     if (lives <= 0) {
         gameOver();
     } else {
-        // Determine if we're on mobile
-        const isMobile = window.innerWidth < 768;
-        
-        // Reset player position with mobile adjustment
+        // Reset player position to bottom of screen
         player.x = canvas.width / 2;
-        if (isMobile) {
-            player.y = canvas.height - (canvas.height * 0.3); // Position 30% from bottom on mobile
-        } else {
-            player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE; // Default position for desktop
-        }
+        player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE;
     }
 }
 
@@ -794,23 +801,20 @@ function checkWin() {
         // Update controls visibility - hide after level 1
         updateControlsVisibility();
         
-        // Determine if we're on mobile
-        const isMobile = window.innerWidth < 768;
-        
-        // Reset player position with mobile adjustment
+        // Reset player position to bottom of screen
         player.x = canvas.width / 2;
-        if (isMobile) {
-            player.y = canvas.height - (canvas.height * 0.3); // Position 30% from bottom on mobile
-        } else {
-            player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE; // Default position for desktop
-        }
+        player.y = canvas.height - GAME_PARAMS.PLAYER_SIZE;
         
         // Reset angle tracking for new level
         prevAngles = {};
         angleChangeRates = {};
         
         // Generate new circles with updated parameters
+        const isMobile = window.innerWidth < 768;
         generateCircles(isMobile);
+        
+        // Log that we've generated new circles with updated vertical positioning
+        console.log(`Level ${level}: Generated new circles with top row positioning adjustment`);
     }
 }
 
